@@ -6,6 +6,12 @@
     "type": "git",
     "url": "https://github.com/cthuflu/vscode-sdlang"
   },
+  "author": {
+    "name": "Jacob Pfeiffer",
+    "email": "jacob@pfeiffer.codes",
+    "url": "https://pfeiffer.codes"
+  },
+  "publisher": "cthuflu",
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.87.0"
