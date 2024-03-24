@@ -1,0 +1,48 @@
+# A series of numbers to test
+
+integers {
+  0
+  1
+  2
+  4
+  8
+  16
+  32
+  64
+  128
+  256
+  512
+  1024
+  2048
+  4096
+  8192
+  16384
+  -1
+  -413
+  123456L   # Long
+  123456l
+}
+
+floats {
+  1.0
+  0.1
+  1.2345
+  5432.1
+  12345.54321
+  -2.0
+  -54321.12345
+  1.      # 1.0
+  .1      # 0.1
+  .       # 0.0, this is in spec
+  -.      # -0.0, valid parse, invalid value
+  -0.     # Same as previous
+  -.0     # Same as previous
+  0.0     # 0.0
+  123456.00f    # Float
+  123456.00F    # Float
+  123456.00d    # Decimal
+  123456.00D    # Decimal
+  123456.00bd   # "Big Decimal" 128 bit
+  123456.00BD
+}
+

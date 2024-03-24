@@ -1,0 +1,268 @@
+$schema: https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json
+name: SDLang
+scopeName: source.sdlang
+patterns:
+  - include: '#comments'
+  - include: '#tag'
+  - include: '#invalid'
+
+repository:
+  comments:
+    # "Meta comment capture"
+    name: meta.comment.sdlang
+    patterns:
+      - include: '#multiline_comment'
+      - include: '#line_comment'
+
+  multiline_comment:
+    # "C-Style comment blocks"
+    name: comment.block.c.sdlang
+    begin: /\*
+    end: \*/
+
+  line_comment:
+    patterns:
+        # "C-Style comment line"
+      - name: comment.line.c.sdlang
+        match: (//).*$
+        # "Shell/Bash comment line"
+      - name: comment.line.shell.sdlang
+        match: (\#).*$
+        # "Lua comment line"
+      - name: comment.line.lua.sdlang
+        match: (--).*$
+
+  strings:
+    # Meta string capture
+    patterns:
+      # Standard "double quoted" string
+      # These allow escapes
+      - name: string.quoted.double.sdlang
+        begin: (\")
+        end: (\"|$)
+        patterns:
+          # Escape characters within a string, such as \t, \n, \.
+          - name: constant.character.escape.sdlang
+            match: \\\S
+          # Continue string onto the next line
+          # Note that there can't be any characters after this, even comments or spaces
+          - name: punctuation.continue_string.sdlang
+            begin: \\
+            end: (^)
+            patterns:
+              - name: invalid.illegal.string.quoted.double.sdlang
+                match: ([\S ]+)
+      # Interpolated `backtick` string
+      # These do NOT allow escapes
+      - name: string.quoted.backtick.sdlang
+        begin: \`
+        end: \`
+      # C-style 'c' 'h' 'a' 'r' literal
+      # These aren't outlined in the standard, but are implemented
+      - name: string.quoted.single.char.sdlang
+        match: \'\\?.\'
+      # Char literals must have one char
+      - name: invalid.illegal.string.quoted.single.sdlang
+        match: \'\'
+      - include: '#binary'
+
+  literals:
+    # Meta capture for the valid literals
+    name: meta.literal.sdlang
+    patterns:
+      - include: '#boolean'
+      - name: constant.language.null.sdlang
+        match: \b(null)\b
+      - include: '#strings'
+      - include: '#numeric'
+
+  datetime:
+    name: meta.datetime.sdlang
+    patterns:
+      # 2015/12/06                  // Date value
+      # NOTE: Date is actually a separate type from datetime
+      # 2015/12/06 12:00:00.000-UTC // Date/time value (UTC timezone)
+      # 2015/12/06 12:00:00.000     // Date/time value (local time)
+      # Undocumented, but in the D reference implementation
+      # 2015/12/06 12:00:00.000-America/New_York // Date/Time with location timezone
+      # 2015/12/06 12:00:00.000-UTC+05:00 // Date/Time with UTC Offset
+      - name: string.other.datetime.sdlang
+        match: >
+          (?x)
+            (\d{4})     # Year
+            (/)
+            (\d{2})     # Month
+            (/)
+            (\d{2})     # Day
+            (?: 
+              \x20        # Space literal
+              (\d{2})     # hour
+              (:)
+              (\d{2})     # minute
+              (?:
+                (?:
+                  (:)
+                  (\d{2})   
+                )?        # second
+                (?:
+                  (.)
+                  (\d{3})
+                )?        # .milliseconds
+              )?
+              ( -
+                \w+
+                (
+                  \/\w+
+                  |[+-]\d+(:\d+)?
+                )?
+              )?          # -ZONE
+            )?
+          \b
+      # 12:14:34     // Duration: 12 hours, 14 minutes, 34 seconds
+      # 12:14:34.123 // 12 h, 14 min, 34 s, 123 ms
+      # 2d:12:14:34  // 2 days, 12 h, 14 min, 34 s
+      - name: string.other.duration.sdlang
+        match: >
+          (?x)
+            (?:
+              (\d+d)
+              (:)
+            )?          # days
+            (\d{2})     # hour
+            (:)
+            (\d{2})     # minute
+            (:)
+            (\d{2})     # second
+            (?:
+              (.)
+              (\d{3})
+            )?          # .milliseconds
+          \b
+
+  numeric:
+    # Meta capture for numeric types (float and integer)
+    name: meta.numeric.sdlang
+    begin: (-)?(?=[\d\.])
+    beginCaptures:
+      '1': {name: constant.numeric.negative.sdlang}
+    end: (?=[\n\s])
+    patterns:
+      - include: '#datetime'
+      - name: constant.numeric.decimal.sdlang
+        match: >
+          (?xi)
+            (\d+)?
+            (\.)
+            (\d+)?
+            (?:
+              ([FD]|BD)   # Float, Decimal, or Big Decimal (128 bit)
+          \b)?
+        captures:
+          '2': {name: constant.numeric.other.separator.sdlang}
+          '4': {name: support.constant.type.sdlang}
+      - name: constant.numeric.integer.sdlang
+        match: (?i)(\d+)(L?)\b
+        captures:
+          '2': {name: support.constant.type.sdlang}
+
+  boolean:
+    # Boolean can be
+    # - true/false
+    # - on/off
+    # on/off and true/false are equivalent, value-wise ('on' is 'true', 'off' is 'false')
+    name: constant.language.boolean.$1.sdlang
+    match: \b(true|false|on|off)\b
+
+  binary:
+    # Binary data 'string', which is strored as a base64 encoded string
+    # Data can have any amount of spaces in between
+    name: meta.quoted.binary.sdlang
+    begin: \[
+    end: \]
+    beginCaptures:
+      '0': {name: string.punctuation.binary.open.sdlang}
+    endCaptures:
+      '0': {name: string.punctuation.binary.close.sdlang}
+    patterns:
+      - name: string.binary.section.sdlang
+        match: ([A-Za-z0-9\+\/\=]+)
+      - name: invalid.illegal.string.other.base64.sdlang
+        match: ([\S].+)
+
+  attribute:
+    # Attributes on a tag, Namespace:Key=Value
+    name: meta.tag.attribute.$1$2$3.sdlang
+    begin: (?:([[:alpha:]_][[:alnum:]_\-\.\$]*)(:))?([[:alpha:]_][[:alnum:]_\-\.\$]*)(\=)
+    end: (\G|(?=[\s\n\;])|$)
+    beginCaptures:
+      '1': {name: entity.other.attribute-name.namespace.$1.sdlang}
+      '2': {name: puncuation.separator.namespace.sdlang}
+      '3': {name: entity.other.attribute-name.attribute.$3.sdlang}
+    patterns:
+      - include: '#literals'
+
+  tag_children:
+    # Tag Children, which includes a list of values or other tags
+    name: meta.tag.children.sdlang
+    begin: (\{)
+    end: (\})
+    beginCaptures:
+      '0': {name: punctuation.tag_children.open.sdlang}
+    endCaptures:
+      '0': {name: punctuation.tag_children.close.sdlang}
+    patterns:
+      # Newline or semicolon required after opening brace
+      - name: invalid.illegal.other.newline.sdlang
+        match: (?<=\{)[^;\n]+
+      - include: '$self'
+      - include: '#tag_contents'
+
+  tag_contents:
+    # Meta capture for common tag contents
+    patterns:
+      - include: '#comments'
+      - include: '#literals'
+      - include: '#attribute'
+
+  tag:
+    patterns:
+      - include: '#invalid'
+      # Standard tag
+      - name: meta.tag.named.$0.sdlang
+        begin: (?:([[:alpha:]_][[:alnum:]_\-\.\$]*)(:))?([[:alpha:]_][[:alnum:]_\-\.\$]*)
+        end: (\G(?=\})|$|;|(?=\}))
+        beginCaptures:
+          '1': {name: entity.name.type.namespace.$1.sdlang}
+          '2': {name: puncuation.separator.namespace.sdlang}
+          '3': {name: entity.name.tag.$3.sdlang}
+        patterns:
+          - include: '#line_continue'
+          - include: '#tag_contents'
+          - include: '#tag_children'
+      # Anonymous Tag
+      - name: meta.tag.anonymous.sdlang
+        begin: (?=[\"\'\d\[])
+        end: (\G(?=\})|$|(?=\}))
+        patterns:
+          - include: '#line_continue'
+          - include: '#tag_children'
+          - include: '#tag_contents'
+
+  line_continue: 
+    # Line continue
+    name: meta.tag.line.continue.sdlang
+    begin: (\\)
+    end: (^)
+    beginCaptures:
+      '1': {name: punctuation.line.continue.sdlang}
+
+  invalid:
+    patterns:
+      # Anonymous tag with single attribute is not allowed
+      - name: invalid.illegal.entity.other.attribute-name.anonymous.sdlang
+        match: \S+\=
+      # An anonymous tag with children is not allowed,
+      # but is a point of contention for specification V2 (if it is ever released)
+      - name: invalid.illegal.string.other.anonymous.sdlang
+        begin: \{
+        end: \}

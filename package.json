@@ -1,0 +1,47 @@
+{
+  "name": "sdlang",
+  "displayName": "SDLang - Simple Declarative Language",
+  "description": "Syntax highlighting for SDLang",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cthuflu/vscode-sdlang"
+  },
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.87.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "sdlang",
+        "aliases": [
+          "SDLang",
+          "sdlang",
+          "sdl"
+        ],
+        "extensions": [
+          ".sdl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "sdlang",
+        "scopeName": "source.sdlang",
+        "path": "./_build/syntaxes/sdlang.tmLanguage.json"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^2.24.0",
+    "js-yaml": "^4.1.0"
+  },
+  "scripts": {
+    "make": "make",
+    "vscode:prepublish": "make"
+  }
+}
