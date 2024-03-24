@@ -13,6 +13,10 @@ Much of this is based on the reference implementations
 
 - Complete Textmate highlighting for SDLang
 
+## Install
+
+The extension is published on the VSCode Marketplace [here](https://marketplace.visualstudio.com/items?itemName=cthuflu.sdlang-grammar).
+
 ## Known Issues
 
 Issues with the grammar
